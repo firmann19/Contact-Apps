@@ -1,17 +1,61 @@
 import React from "react";
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from "react-router-dom";
 import ContactList from "../components/ContactList";
-import { deleteContact, getContacts } from "../utils/data";
+import { getContacts, deleteContact } from "../utils/api";
 import SearchBar from "../components/SearchBar";
+import { LocaleConsumer } from "../context/LocaleContext";
+
+
+// const [searchParams, setSearchParams] = useSearchParams();
+// const [contacts, setContacts] = React.useState([]);
+// const [keyword, setKeyword] = React.useState(() => {
+//   return searchParams.get("keyword") || "";
+// });
+// const { locale } = React.useContext(LocaleContext);
+
+// React.useEffect(() => {
+//   getContacts().then(({ data }) => {
+//     setContacts(data);
+//   });
+// }, []);
+
+// async function onDeleteHandler(id) {
+//   await deleteContact(id);
+//   // update the contacts state from network.js
+//   const { data } = await getContacts();
+//   setContacts(data);
+// }
+
+// function onKeywordChangeHandler(keyword) {
+//   setKeyword(keyword);
+//   setSearchParams({ keyword });
+// }
+
+// const filteredContacts = contacts.filter((contact) => {
+//   return contact.name.toLowerCase().includes(keyword.toLowerCase());
+// });
+
+// function HomePage() {
+//   return (
+//     <section>
+//       <SearchBar keyword={keyword} keywordChange={onKeywordChangeHandler} />
+//       <ContactList contacts={filteredContacts} onDelete={onDeleteHandler} />
+//     </section>
+//   );
+// }
+
+// export default HomePage;
 
 function HomePageWrapper() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const keyword = searchParams.get('keyword');
+  const keyword = searchParams.get("keyword");
   function changeSearchParams(keyword) {
     setSearchParams({ keyword });
   }
- 
-  return <HomePage defaultKeyword={keyword} keywordChange={changeSearchParams} />
+
+  return (
+    <HomePage defaultKeyword={keyword} keywordChange={changeSearchParams} />
+  );
 }
 
 class HomePage extends React.Component {
@@ -19,7 +63,7 @@ class HomePage extends React.Component {
     super(props);
 
     this.state = {
-      contacts: getContacts(),
+      contacts: [],
       keyword: "",
     };
 
@@ -27,14 +71,25 @@ class HomePage extends React.Component {
     this.onKeywordChangeHandler = this.onKeywordChangeHandler.bind(this);
   }
 
-  onDeleteHandler(id) {
-    deleteContact(id);
+  async componentDidMount() {
+    const { data } = await getContacts();
 
-    //update the contact state from data.js
     this.setState(() => {
       return {
-        contacts: getContacts(),
-        keyword: props.defaultKeyword || '',
+        contacts: data,
+      };
+    });
+  }
+
+  async onDeleteHandler(id) {
+    await deleteContact(id);
+
+    //update the contact state from api.js
+    const { data } = await getContacts();
+
+    this.setState(() => {
+      return {
+        contacts: data,
       };
     });
   }
@@ -57,17 +112,22 @@ class HomePage extends React.Component {
     });
 
     return (
+      <LocaleConsumer>
+        {
+          ({locale}) => {
+            return (
       <section>
         <SearchBar
           keyword={this.state.keyword}
           keywordChange={this.onKeywordChangeHandler}
         />
-        <h2>Daftar Kontak</h2>
-        <ContactList
-          contacts={contacts}
-          onDelete={this.onDeleteHandler}
-        />
+        <h2>{locale === 'id' ? 'Daftar Kontak' : 'Contacts List'}</h2>
+        <ContactList contacts={contacts} onDelete={this.onDeleteHandler} />
       </section>
+            )
+          }
+        }
+      </LocaleConsumer>
     );
   }
 }
